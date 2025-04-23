@@ -9,7 +9,7 @@ import os
 import sys
 
 # --- Configuration ---
-API_BEARER_TOKEN = os.getenv("API_BEARER_TOKEN")
+API_BEARER_TOKEN = "1234"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -42,7 +42,6 @@ app = FastAPI(
 class SignatureRequest(BaseModel):
     encrypted_signature: str = Field(..., description="The encrypted 's' parameter value from the format URL.")
     n_param: str
-    # signature_key: str # Removed, seems unused
     player_url: str = Field(..., description="The URL of the base.js or player_ias.vfl file.")
     video_id: str
 
@@ -77,19 +76,23 @@ async def decrypt_signature_endpoint(request: SignatureRequest = Body(...)):
     logger.info(f"Received decryption request for player: {request.player_url}")
     logger.debug(f"Encrypted sig: {request.encrypted_signature}, n_param: {request.n_param}, video_id: {request.video_id}")
 
-    try:
-        decrypted_sig = _youtube_ie._decrypt_signature(
-            request.encrypted_signature,
-            request.video_id,
-            request.player_url,
-        )
+    decrypted_sig = ""
+    decrypted_n_result = ""
 
-        if not decrypted_sig:
-             logger.warning(f"Signature decryption returned empty for player {request.player_url}")
-             raise HTTPException(status_code=400, detail="Signature decryption failed or returned empty result.")
+    try:
+        if request.encrypted_signature and request.encrypted_signature != "":
+            decrypted_sig = _youtube_ie._decrypt_signature(
+                request.encrypted_signature,
+                request.video_id,
+                request.player_url,
+            )
+
+            if not decrypted_sig:
+                logger.warning(f"Signature decryption returned empty for player {request.player_url}")
+                raise HTTPException(status_code=400, detail="Signature decryption failed or returned empty result.")
 
         decrypted_n_result = None
-        if request.n_param:
+        if request.n_param and request.n_param != "":
             logger.debug("Calling _decrypt_nsig...")
             decrypted_n_result = _youtube_ie._decrypt_nsig(
                 request.n_param,
