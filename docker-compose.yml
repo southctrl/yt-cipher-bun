@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  ytdlp-api:
+    build: . # Build the image from the Dockerfile in the current directory
+    container_name: ytdlp_signature_api
+    ports:
+      - "8001:8001" # Map host port 8001 to container port 8001
+    environment:
+      # Pass the API token from the host environment or a .env file
+      - API_BEARER_TOKEN=${API_BEARER_TOKEN}
+      # Optionally set HOST and PORT for uvicorn if needed inside the container
+      # - HOST=0.0.0.0 (already default in main.py)
+      # - PORT=8001 (already default in main.py)
+    restart: unless-stopped
