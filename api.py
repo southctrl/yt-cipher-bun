@@ -9,7 +9,7 @@ import os
 import sys
 
 # --- Configuration ---
-API_BEARER_TOKEN = "1234"
+API_BEARER_TOKEN = os.getenv("API_BEARER_TOKEN")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
