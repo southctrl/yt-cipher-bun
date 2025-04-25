@@ -8,13 +8,11 @@ import uvicorn
 import os
 import sys
 
-# --- Configuration ---
 API_BEARER_TOKEN = os.getenv("API_BEARER_TOKEN")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- Security ---
 if not API_BEARER_TOKEN:
     logger.error("FATAL: API_BEARER_TOKEN environment variable not set.")
     sys.exit("API_BEARER_TOKEN environment variable must be set.")
@@ -29,16 +27,14 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(secur
             detail="Invalid or missing bearer token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return True # Indicate success
+    return True
 
-# --- FastAPI App ---
 app = FastAPI(
     title="yt-dlp Signature Decryption Service",
     description="Provides access to yt-dlp's signature decryption logic. Requires Bearer token authentication.",
-    dependencies=[Depends(verify_token)] # Apply auth globally
+    dependencies=[Depends(verify_token)]
 )
 
-# --- Request Model ---
 class SignatureRequest(BaseModel):
     encrypted_signature: str = Field(..., description="The encrypted 's' parameter value from the format URL.")
     n_param: str
@@ -49,7 +45,6 @@ class StsRequest(BaseModel):
     player_url: str = Field(..., description="The URL of the base.js or player_ias.vfl file.")
     video_id: str
 
-# --- Response Model ---
 class SignatureResponse(BaseModel):
     decrypted_signature: str
     decrypted_n_sig: str
@@ -57,7 +52,6 @@ class SignatureResponse(BaseModel):
 class StsResponse(BaseModel):
     sts: int
 
-# --- Global yt-dlp Instance ---
 ydl_opts = {'quiet': True, 'no_warnings': True}
 try:
     _ydl_instance = yt_dlp.YoutubeDL(ydl_opts)
@@ -67,7 +61,6 @@ except Exception as e:
     logger.exception("Failed to initialize yt-dlp YoutubeIE globally!")
     _youtube_ie = None
 
-# --- Endpoints ---
 @app.post("/decrypt_signature", response_model=SignatureResponse)
 async def decrypt_signature_endpoint(request: SignatureRequest = Body(...)):
     if not _youtube_ie:
@@ -102,7 +95,6 @@ async def decrypt_signature_endpoint(request: SignatureRequest = Body(...)):
             if not decrypted_n_result:
                  logger.warning(f"N-parameter decryption returned empty for player {request.player_url}")
                  # Don't raise HTTPException here, maybe only sig was needed or n failed independently?
-                 # Let the caller decide based on the None value.
             else:
                 logger.debug(f"Decrypted n-parameter successfully.")
 
@@ -137,20 +129,17 @@ async def get_signature_timestamp_endpoint(request: StsRequest = Body(...)):
              logger.info(f"Successfully extracted STS ({sts_value}) for player: {request.player_url}")
              return StsResponse(sts=sts_value)
         else:
-             # Should not be reached if fatal=True and regex fails in yt-dlp, but handle defensively.
              logger.error(f"STS extraction failed for player {request.player_url} despite fatal=True.")
              raise HTTPException(status_code=500, detail="STS could not be extracted.")
 
-    except Exception as e: # Catching broad Exception as yt-dlp might raise various things here
+    except Exception as e:
         logger.exception(f"Error getting STS for player {request.player_url}: {e}")
-        # Check if it's a known "not found" type error if possible, otherwise generic 500
         if isinstance(e, yt_dlp.utils.ExtractorError) and "Unable to extract signature timestamp" in str(e):
              raise HTTPException(status_code=404, detail=f"STS not found in player: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error during STS extraction: {e}")
 
 
 if __name__ == "__main__":
-     # Default port changed slightly to avoid common conflicts if needed
      port = int(os.getenv("PORT", 8001))
      host = os.getenv("HOST", "0.0.0.0")
      logger.info(f"Starting server on {host}:{port}")
