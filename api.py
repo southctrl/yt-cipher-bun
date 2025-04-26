@@ -143,4 +143,4 @@ if __name__ == "__main__":
      port = int(os.getenv("PORT", 8001))
      host = os.getenv("HOST", "0.0.0.0")
      logger.info(f"Starting server on {host}:{port}")
-     uvicorn.run(app, host=host, port=port)
+     uvicorn.run("api:app", host=host, port=port, workers=6)
