@@ -87,7 +87,7 @@ app.post('/decrypt_signature', async (req: Request<{}, {}, SignatureRequest>, re
         const args = [
             'run',
             '--allow-read',
-            'ejs/run.ts',
+            '../ejs/run.ts',
             playerFilePath
         ];
 
