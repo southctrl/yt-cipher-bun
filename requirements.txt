@@ -1,3 +1,0 @@
-fastapi
-uvicorn[standard] # Includes performance extras
-yt-dlp
