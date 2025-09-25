@@ -1,4 +1,4 @@
-import { type ESTree } from "meriyah";
+import { type ESTree } from "npm:meriyah";
 import { type DeepPartial } from "./types.ts";
 
 export function matchesStructure<T extends ESTree.Node>(
@@ -20,7 +20,9 @@ export function matchesStructure<T extends ESTree.Node>(
     }
     if ("or" in structure) {
       // Handle `{ or: [a, b] }`
-      return structure.or.some((node) => matchesStructure(obj, node));
+      return (structure as { or: unknown[] }).or.some((node) =>
+        matchesStructure(obj, node)
+      );
     }
     for (const [key, value] of Object.entries(structure)) {
       if (!matchesStructure(obj[key as keyof typeof obj], value)) {

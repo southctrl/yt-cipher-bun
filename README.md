@@ -63,4 +63,4 @@ curl -X POST http://localhost:8001/decrypt_signature \
 ```
 
 ### `POST /get_sts`
-
+Was originally for getting the timestamp, but with ejs we dont grab that. Regex still seems ok to get it. 
