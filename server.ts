@@ -2,8 +2,7 @@ import { serve } from "https://deno.land/std@0.140.0/http/server.ts";
 import { crypto } from "https://deno.land/std@0.140.0/crypto/mod.ts";
 import { ensureDir } from "https://deno.land/std@0.140.0/fs/ensure_dir.ts";
 import { join } from "https://deno.land/std@0.140.0/path/mod.ts";
-import main from "./ejs/src/main.ts";
-import type { Input as MainInput } from "./ejs/src/main.ts";
+import type { Input as MainInput, Output as MainOutput } from "./ejs/src/main.ts";
 
 const API_BEARER_TOKEN = Deno.env.get("API_BEARER_TOKEN");
 
@@ -13,6 +12,60 @@ if (!API_BEARER_TOKEN) {
 }
 
 const CACHE_DIR = join(Deno.cwd(), 'player_cache');
+const CONCURRENCY = parseInt(Deno.env.get("MAX_THREADS") || "", 10) || navigator.hardwareConcurrency || 1;
+
+// This is a heavy CPU task, mostly from the AST done in ejs
+// Create a popl of worker threads to assign tasks to
+interface WorkerWithStatus extends Worker {
+    isIdle?: boolean;
+}
+const workers: WorkerWithStatus[] = [];
+const taskQueue: {
+    data: MainInput;
+    resolve: (output: MainOutput) => void;
+    reject: (error: any) => void;
+}[] = [];
+
+function dispatch() {
+    const idleWorker = workers.find(w => w.isIdle);
+    if (!idleWorker || taskQueue.length === 0) {
+        return;
+    }
+
+    const task = taskQueue.shift()!;
+    idleWorker.isIdle = false;
+
+    const messageHandler = (e: MessageEvent) => {
+        idleWorker.removeEventListener("message", messageHandler);
+        idleWorker.isIdle = true;
+
+        const { type, data } = e.data;
+        if (type === 'success') {
+            task.resolve(data);
+        } else {
+            const err = new Error(data.message);
+            err.stack = data.stack;
+            task.reject(err);
+        }
+        dispatch(); // keep checking
+    };
+
+    idleWorker.addEventListener("message", messageHandler);
+    idleWorker.postMessage(task.data);
+}
+
+function execInPool(data: MainInput): Promise<MainOutput> {
+    return new Promise((resolve, reject) => {
+        taskQueue.push({ data, resolve, reject });
+        dispatch();
+    });
+}
+
+for (let i = 0; i < CONCURRENCY; i++) {
+    const worker: WorkerWithStatus = new Worker(new URL("./worker.ts", import.meta.url).href, { type: "module" });
+    worker.isIdle = true;
+    workers.push(worker);
+}
 
 interface SignatureRequest {
     encrypted_signature: string;
@@ -82,7 +135,7 @@ async function handler(req: Request): Promise<Response> {
             ],
         };
 
-        const output = main(mainInput);
+        const output = await execInPool(mainInput);
 
         if (output.type === 'error') {
             throw new Error(output.error);
@@ -121,5 +174,5 @@ const host = Deno.env.get("HOST") || '0.0.0.0';
 await ensureDir(CACHE_DIR);
 console.log(`Player cache directory ensured at: ${CACHE_DIR}`);
 
-console.log(`Server listening on http://${host}:${port}`);
+console.log(`Server listening on http://${host}:${port} with ${CONCURRENCY} workers`);
 await serve(handler, { port: Number(port), hostname: host });
