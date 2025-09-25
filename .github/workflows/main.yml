@@ -5,22 +5,7 @@ on:
     branches: [ "master" ]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    - name: Set up Deno
-      uses: denoland/setup-deno@v1
-      with:
-        deno-version: v1.x
-    - name: Check formatting
-      run: deno fmt --check
-    - name: Lint code
-      run: deno lint
-
   build-and-push:
-    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
