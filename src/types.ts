@@ -4,7 +4,6 @@ export interface SignatureRequest {
     encrypted_signature: string;
     n_param: string;
     player_url: string;
-    video_id: string;
 }
 
 export interface SignatureResponse {
@@ -14,7 +13,6 @@ export interface SignatureResponse {
 
 export interface StsRequest {
     player_url: string;
-    video_id: string;
 }
 
 export interface StsResponse {

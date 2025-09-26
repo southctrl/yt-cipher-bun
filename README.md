@@ -45,15 +45,13 @@ When accessing the service over IPv6, make sure to use the correct address forma
 {
   "encrypted_signature": "...",
   "n_param": "...",
-  "player_url": "...",
-  "video_id": "VIDEO_ID"
+  "player_url": "..."
 }
 ```
 
 - `encrypted_signature` (string): The encrypted signature from the video stream.
 - `n_param` (string): The `n` parameter value.
 - `player_url` (string): The URL to the JavaScript player file that contains the decryption logic.
-- `video_id` (string): The ID of the video.
 
 **Successful Response:**
 
@@ -73,8 +71,7 @@ curl -X POST http://localhost:8001/decrypt_signature \
 -d '{
   "encrypted_signature": "...",
   "n_param": "...",
-  "player_url": "https://...",
-  "video_id": "..."
+  "player_url": "https://..."
 }'
 ```
 
@@ -86,13 +83,11 @@ Extracts the signature timestamp (`sts`) from a player script.
 
 ```json
 {
-  "player_url": "...",
-  "video_id": "..."
+  "player_url": "..."
 }
 ```
 
 - `player_url` (string): The URL to the JavaScript player file.
-- `video_id` (string): The ID of the video.
 
 **Successful Response:**
 
@@ -109,7 +104,6 @@ curl -X POST http://localhost:8001/get_sts \
 -H "Content-Type: application/json" \
 -H "Authorization: your_secret_token" \
 -d '{
-  "player_url": "https://...",
-  "video_id": "test"
+  "player_url": "https://..."
 }'
 ```
