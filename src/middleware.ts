@@ -1,5 +1,4 @@
 import { validateAndNormalizePlayerUrl } from "./utils.ts";
-
 type Next = (req: Request) => Promise<Response>;
 
 export function withPlayerUrlValidation(handler: Next): Next {
@@ -17,7 +16,7 @@ export function withPlayerUrlValidation(handler: Next): Next {
             }
 
             const normalizedUrl = validateAndNormalizePlayerUrl(body.player_url);
-            
+
             // Reconstruct the request with the normalized URL
             const newBody = { ...body, player_url: normalizedUrl };
             const newReq = new Request(req.url, {
@@ -27,7 +26,7 @@ export function withPlayerUrlValidation(handler: Next): Next {
             });
 
             return await handler(newReq);
-        } catch (error) {
+        } catch (error: any) {
             if (error instanceof SyntaxError) {
                  return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400, headers: { "Content-Type": "application/json" } });
             }

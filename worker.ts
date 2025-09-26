@@ -5,7 +5,7 @@ self.onmessage = (e: MessageEvent<MainInput>) => {
     try {
         const output: MainOutput = main(e.data);
         self.postMessage({ type: 'success', data: output });
-    } catch (error) {
+    } catch (error: any) {
         self.postMessage({
             type: 'error',
             data: {

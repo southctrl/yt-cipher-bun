@@ -1,7 +1,8 @@
 import type { Input as MainInput, Output as MainOutput } from "../ejs/src/main.ts";
 import type { WorkerWithStatus, Task } from "./types.ts";
+import { env } from "bun";
 
-const CONCURRENCY = parseInt(Deno.env.get("MAX_THREADS") || "", 10) || navigator.hardwareConcurrency || 1;
+const CONCURRENCY = parseInt(env.MAX_THREADS || "", 10) || navigator.hardwareConcurrency || 1;
 
 const workers: WorkerWithStatus[] = [];
 const taskQueue: Task[] = [];

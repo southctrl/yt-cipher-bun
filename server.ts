@@ -1,12 +1,11 @@
-import { serve } from "https://deno.land/std@0.140.0/http/server.ts";
+import { serve, env } from 'bun'
 import { initializeWorkers } from "./src/workerPool.ts";
 import { initializeCache } from "./src/playerCache.ts";
 import { handleDecryptSignature } from "./src/handlers/decryptSignature.ts";
 import { handleGetSts } from "./src/handlers/getSts.ts";
 import { withPlayerUrlValidation } from "./src/middleware.ts";
 
-const API_TOKEN = Deno.env.get("API_TOKEN");
-
+const API_TOKEN = env.API_TOKEN || "";
 async function handler(req: Request): Promise<Response> {
     const authHeader = req.headers.get("authorization");
     if (API_TOKEN && API_TOKEN !== "") {
@@ -34,15 +33,16 @@ async function handler(req: Request): Promise<Response> {
         return await composedHandler(req);
     } catch (error) {
         console.error(error);
-        return new Response(JSON.stringify({ error: 'Internal Server Error', message: error.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return new Response(JSON.stringify({ error: 'Internal Server Error', message }), { status: 500, headers: { "Content-Type": "application/json" } });
     }
 }
 
-const port = Deno.env.get("PORT") || 8001;
-const host = Deno.env.get("HOST") || '0.0.0.0';
+const port = env.PORT || 8001;
+const host = env.HOST || '0.0.0.0';
 
 await initializeCache();
 initializeWorkers();
 
 console.log(`Server listening on http://${host}:${port}`);
-await serve(handler, { port: Number(port), hostname: host });
+serve({ fetch: handler, port: Number(port), hostname: host });

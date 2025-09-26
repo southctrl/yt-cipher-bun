@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@types/bun": "^1.2.22",
+    "typescript": "^5.9.2"
+  }
+}

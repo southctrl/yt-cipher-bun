@@ -1,8 +1,7 @@
-import { crypto } from "https://deno.land/std@0.140.0/crypto/mod.ts";
-import { ensureDir } from "https://deno.land/std@0.140.0/fs/ensure_dir.ts";
-import { join } from "https://deno.land/std@0.140.0/path/mod.ts";
+import { join } from "path";
+import fs from "fs/promises";
 
-export const CACHE_DIR = join(Deno.cwd(), 'player_cache');
+export const CACHE_DIR = join(process.cwd(), 'player_cache');
 
 export async function getPlayerFilePath(playerUrl: string): Promise<string> {
     // This hash of the player script url will mean that diff region scripts are treated as unequals, even for the same version #
@@ -13,17 +12,17 @@ export async function getPlayerFilePath(playerUrl: string): Promise<string> {
     const filePath = join(CACHE_DIR, `${hash}.js`);
 
     try {
-        await Deno.stat(filePath);
+        await fs.stat(filePath);
         return filePath;
-    } catch (error) {
-        if (error instanceof Deno.errors.NotFound) {
+    } catch (error: any) {
+        if (error.code === "ENOENT") {
             console.log(`Cache miss for player: ${playerUrl}. Fetching...`);
             const response = await fetch(playerUrl);
             if (!response.ok) {
                 throw new Error(`Failed to fetch player from ${playerUrl}: ${response.statusText}`);
             }
             const playerContent = await response.text();
-            await Deno.writeTextFile(filePath, playerContent);
+            await fs.writeFile(filePath, playerContent, "utf8");
             console.log(`Saved player to cache: ${filePath}`);
             return filePath;
         }
@@ -32,6 +31,6 @@ export async function getPlayerFilePath(playerUrl: string): Promise<string> {
 }
 
 export async function initializeCache() {
-    await ensureDir(CACHE_DIR);
+    await fs.mkdir(CACHE_DIR, { recursive: true });
     console.log(`Player cache directory ensured at: ${CACHE_DIR}`);
 }
