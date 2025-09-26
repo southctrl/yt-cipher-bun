@@ -2,6 +2,15 @@ Basic service to eval yt player scripts for nsig stuff.
 
 ## Getting Started
 
+### Public instance
+**It is very much reccomended to host yourself**, the public one should be used for testing. Do not expect 100% uptime or fast responses. 
+
+You can use the public instance without a password at `https://cipher.kikkia.dev/api`. 
+
+WARNING: Ratelimit of 5/sec, also do not expect fast performance or perfect uptime. To have better performance and garunteed uptime, host it yourself. 
+
+### Hosting yourself
+
 The easiest way to use this right now is with docker
 
 ```bash
