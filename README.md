@@ -61,7 +61,7 @@ Environment Variables:
 ```bash
 curl -X POST http://localhost:8001/decrypt_signature \
 -H "Content-Type: application/json" \
--H "Authorization: Bearer your_secret_token" \
+-H "Authorization: your_secret_token" \
 -d '{
   "encrypted_signature": "...",
   "n_param": "...",
@@ -71,4 +71,37 @@ curl -X POST http://localhost:8001/decrypt_signature \
 ```
 
 ### `POST /get_sts`
-Was originally for getting the timestamp, but with ejs we dont grab that. Regex still seems ok to get it. 
+
+Extracts the signature timestamp (`sts`) from a player script.
+
+**Request Body:**
+
+```json
+{
+  "player_url": "...",
+  "video_id": "..."
+}
+```
+
+- `player_url` (string): The URL to the JavaScript player file.
+- `video_id` (string): The ID of the video.
+
+**Successful Response:**
+
+```json
+{
+  "sts": "some_timestamp"
+}
+```
+
+**Example `curl` request:**
+
+```bash
+curl -X POST http://localhost:8001/get_sts \
+-H "Content-Type: application/json" \
+-H "Authorization: your_secret_token" \
+-d '{
+  "player_url": "https://...",
+  "video_id": "test"
+}'
+```

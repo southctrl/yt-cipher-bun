@@ -74,6 +74,15 @@ interface SignatureResponse {
     decrypted_n_sig: string;
 }
 
+interface StsRequest {
+    player_url: string;
+    video_id: string;
+}
+
+interface StsResponse {
+    sts: string;
+}
+
 async function getPlayerFilePath(playerUrl: string): Promise<string> {
     // This hash of the player script url will mean that diff region scripts are treated as unequals, even for the same version #
     // I dont think I have ever seen 2 scripts of the same version differ between regions but if they ever do this will catch it
@@ -111,52 +120,71 @@ async function handler(req: Request): Promise<Response> {
     }
     
 
-    if (req.method !== 'POST' || new URL(req.url).pathname !== '/decrypt_signature') {
-        return new Response(null, { status: 404 });
+    const { pathname } = new URL(req.url);
+
+    if (req.method !== 'POST') {
+        return new Response(null, { status: 404, headers: { "Content-Type": "application/json" } });
     }
 
     try {
-        const { encrypted_signature, n_param, player_url }: SignatureRequest = await req.json();
-        const playerFilePath = await getPlayerFilePath(player_url);
-        const player = await Deno.readTextFile(playerFilePath);
+        if (pathname === '/decrypt_signature') {
+            const { encrypted_signature, n_param, player_url }: SignatureRequest = await req.json();
+            const playerFilePath = await getPlayerFilePath(player_url);
+            const player = await Deno.readTextFile(playerFilePath);
 
-        const mainInput: MainInput = {
-            type: "player",
-            player,
-            output_preprocessed: false,
-            requests: [
-                { type: "sig", challenges: encrypted_signature ? [encrypted_signature] : [] },
-                { type: "nsig", challenges: n_param ? [n_param] : [] },
-            ],
-        };
+            const mainInput: MainInput = {
+                type: "player",
+                player,
+                output_preprocessed: false,
+                requests: [
+                    { type: "sig", challenges: encrypted_signature ? [encrypted_signature] : [] },
+                    { type: "nsig", challenges: n_param ? [n_param] : [] },
+                ],
+            };
 
-        const output = await execInPool(mainInput);
+            const output = await execInPool(mainInput);
 
-        if (output.type === 'error') {
-            throw new Error(output.error);
-        }
+            if (output.type === 'error') {
+                throw new Error(output.error);
+            }
 
-        let decrypted_signature = '';
-        let decrypted_n_sig = '';
+            let decrypted_signature = '';
+            let decrypted_n_sig = '';
 
-        for (const r of output.responses) {
-            if (r.type === 'result') {
-                if (encrypted_signature && encrypted_signature in r.data) {
-                    decrypted_signature = r.data[encrypted_signature];
-                }
-                if (n_param && n_param in r.data) {
-                    decrypted_n_sig = r.data[n_param];
+            for (const r of output.responses) {
+                if (r.type === 'result') {
+                    if (encrypted_signature && encrypted_signature in r.data) {
+                        decrypted_signature = r.data[encrypted_signature];
+                    }
+                    if (n_param && n_param in r.data) {
+                        decrypted_n_sig = r.data[n_param];
+                    }
                 }
             }
+
+            const response: SignatureResponse = {
+                decrypted_signature,
+                decrypted_n_sig,
+            };
+
+            return new Response(JSON.stringify(response), { status: 200, headers: { "Content-Type": "application/json" } });
+        } else if (pathname === '/get_sts') {
+            const { player_url }: StsRequest = await req.json();
+            const playerFilePath = await getPlayerFilePath(player_url);
+            const playerContent = await Deno.readTextFile(playerFilePath);
+
+            const stsPattern = /(signatureTimestamp|sts):(\d+)/;
+            const match = playerContent.match(stsPattern);
+
+            if (match && match[2]) {
+                const response: StsResponse = { sts: match[2] };
+                return new Response(JSON.stringify(response), { status: 200, headers: { "Content-Type": "application/json" } });
+            } else {
+                return new Response(JSON.stringify({ error: 'Timestamp not found in player script' }), { status: 404, headers: { "Content-Type": "application/json" } });
+            }
+        } else {
+            return new Response(JSON.stringify({ error: 'Not Found' }), { status: 404, headers: { "Content-Type": "application/json" } });
         }
-
-        const response: SignatureResponse = {
-            decrypted_signature,
-            decrypted_n_sig,
-        };
-
-        return new Response(JSON.stringify(response), { status: 200, headers: { "Content-Type": "application/json" } });
-
     } catch (error) {
         console.error(error);
         return new Response(JSON.stringify({ error: 'Internal Server Error', message: error.message }), { status: 500, headers: { "Content-Type": "application/json" } });
