@@ -1,23 +1,19 @@
-FROM oven/bun:1.2.22-alpine
+FROM oven/bun:1.2.22
 
 WORKDIR /usr/src/app
 
-# Copy package files first for better caching
-COPY package.json bun.lockb* ./
+# Copy package.json (bun.lockb will be created if it doesn't exist)
+COPY package.json ./
 
 # Install dependencies
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Copy source code
 COPY . .
 
-# Create cache directory and set permissions
-RUN mkdir -p player_cache && chown -R bun:bun player_cache
+# Create cache directory
+RUN mkdir -p player_cache
 
 EXPOSE 8001
 
-# Switch to bun user for security
-USER bun
-
-# Start the application
-CMD ["bun", "run", "server.ts"]
+CMD ["bun", "server.ts"]
