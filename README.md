@@ -27,6 +27,14 @@ Environment Variables:
 - `PORT` - Port to run the api on, default: `8001`
 - `HOST` - Sets the hostname for the deno server, default: `0.0.0.0`
 
+## IPv6 Support
+
+To run the server with IPv6, you need to configure the `HOST` environment variable.
+
+- Set `HOST` to `[::]` to bind to all available IPv6 and IPv4 addresses on most modern operating systems.
+
+When accessing the service over IPv6, make sure to use the correct address format. For example, to access the service running on localhost, you would use `http://[::1]:8001/`.
+
 ## API Specification
 
 ### `POST /decrypt_signature`
