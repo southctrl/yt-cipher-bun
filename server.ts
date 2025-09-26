@@ -3,6 +3,7 @@ import { initializeWorkers } from "./src/workerPool.ts";
 import { initializeCache } from "./src/playerCache.ts";
 import { handleDecryptSignature } from "./src/handlers/decryptSignature.ts";
 import { handleGetSts } from "./src/handlers/getSts.ts";
+import { withPlayerUrlValidation } from "./src/middleware.ts";
 
 const API_TOKEN = Deno.env.get("API_TOKEN");
 
@@ -17,18 +18,20 @@ async function handler(req: Request): Promise<Response> {
 
     const { pathname } = new URL(req.url);
 
-    if (req.method !== 'POST') {
-        return new Response(null, { status: 404, headers: { "Content-Type": "application/json" } });
+    let handle: (req: Request) => Promise<Response>;
+
+    if (pathname === '/decrypt_signature') {
+        handle = handleDecryptSignature;
+    } else if (pathname === '/get_sts') {
+        handle = handleGetSts;
+    } else {
+        return new Response(JSON.stringify({ error: 'Not Found' }), { status: 404, headers: { "Content-Type": "application/json" } });
     }
 
+    const composedHandler = withPlayerUrlValidation(handle);
+
     try {
-        if (pathname === '/decrypt_signature') {
-            return await handleDecryptSignature(req);
-        } else if (pathname === '/get_sts') {
-            return await handleGetSts(req);
-        } else {
-            return new Response(JSON.stringify({ error: 'Not Found' }), { status: 404, headers: { "Content-Type": "application/json" } });
-        }
+        return await composedHandler(req);
     } catch (error) {
         console.error(error);
         return new Response(JSON.stringify({ error: 'Internal Server Error', message: error.message }), { status: 500, headers: { "Content-Type": "application/json" } });

@@ -2,7 +2,6 @@ import type { Input as MainInput } from "../../ejs/src/main.ts";
 import { execInPool } from "../workerPool.ts";
 import { getPlayerFilePath } from "../playerCache.ts";
 import type { SignatureRequest, SignatureResponse } from "../types.ts";
-
 export async function handleDecryptSignature(req: Request): Promise<Response> {
     const { encrypted_signature, n_param, player_url }: SignatureRequest = await req.json();
     const playerFilePath = await getPlayerFilePath(player_url);

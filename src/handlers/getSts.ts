@@ -1,6 +1,5 @@
 import { getPlayerFilePath } from "../playerCache.ts";
 import type { StsRequest, StsResponse } from "../types.ts";
-
 export async function handleGetSts(req: Request): Promise<Response> {
     const { player_url }: StsRequest = await req.json();
     const playerFilePath = await getPlayerFilePath(player_url);
