@@ -4,12 +4,7 @@ import { ensureDir } from "https://deno.land/std@0.140.0/fs/ensure_dir.ts";
 import { join } from "https://deno.land/std@0.140.0/path/mod.ts";
 import type { Input as MainInput, Output as MainOutput } from "./ejs/src/main.ts";
 
-const API_BEARER_TOKEN = Deno.env.get("API_BEARER_TOKEN");
-
-if (!API_BEARER_TOKEN) {
-    console.error("FATAL: API_BEARER_TOKEN environment variable not set.");
-    Deno.exit(1);
-}
+const API_TOKEN = Deno.env.get("API_TOKEN");
 
 const CACHE_DIR = join(Deno.cwd(), 'player_cache');
 const CONCURRENCY = parseInt(Deno.env.get("MAX_THREADS") || "", 10) || navigator.hardwareConcurrency || 1;
@@ -108,13 +103,13 @@ async function getPlayerFilePath(playerUrl: string): Promise<string> {
 
 async function handler(req: Request): Promise<Response> {
     const authHeader = req.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return new Response(JSON.stringify({ error: 'Invalid or missing bearer token' }), { status: 403, headers: { "Content-Type": "application/json" } });
+    if (API_TOKEN && API_TOKEN !== "") {
+        if (authHeader !== API_TOKEN) {
+            const error = authHeader ? 'Invalid API token' : 'Missing API token';
+            return new Response(JSON.stringify({ error }), { status: 401, headers: { "Content-Type": "application/json" } });
+        }
     }
-    const token = authHeader.substring('Bearer '.length);
-    if (token !== API_BEARER_TOKEN) {
-        return new Response(JSON.stringify({ error: 'Invalid or missing bearer token' }), { status: 403, headers: { "Content-Type": "application/json" } });
-    }
+    
 
     if (req.method !== 'POST' || new URL(req.url).pathname !== '/decrypt_signature') {
         return new Response(null, { status: 404 });

@@ -15,15 +15,15 @@ docker-compose up
 
 ## Authentication
 
-You'll need to set the `API_BEARER_TOKEN` environment variable in your `docker-compose.yml` file.
+You'll need to set the `API_TOKEN` environment variable in your `docker-compose.yml` file.
 
-Requests without a valid `Authorization: Bearer <your_token>` header will be rejected.
+Requests without a valid `Authorization: <your_token>` header will be rejected.
 
 ## Config
 
 Environment Variables:
 - `MAX_THREADS` - max # of workers that can handle requests. Default is 1 per thread on the machine or 1 if it can't determine that for some reason. 
-- `API_BEARER_TOKEN` - The required bearer token to authenticate requests
+- `API_TOKEN` - The required token to authenticate requests
 - `PORT` - Port to run the api on, default: `8001`
 - `HOST` - Sets the hostname for the deno server, default: `0.0.0.0`
 
