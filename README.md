@@ -1,15 +1,17 @@
 Basic service to eval yt player scripts for nsig stuff. 
 
-## Getting Started
+# Getting Started
 
-### Public instance
+## Public instance
 **It is very much reccomended to host yourself**, the public one should be used for testing. Do not expect 100% uptime or fast responses. 
 
 You can use the public instance without a password at `https://cipher.kikkia.dev/api`. 
 
 WARNING: Ratelimit of 5/sec, also do not expect fast performance or perfect uptime. To have better performance and garunteed uptime, host it yourself. 
 
-### Hosting yourself
+## Hosting yourself
+
+### Docker/Docker-compose
 
 The easiest way to use this right now is with docker
 
@@ -24,9 +26,9 @@ docker-compose up
 
 ## Authentication
 
-You'll need to set the `API_TOKEN` environment variable in your `docker-compose.yml` file.
+You can optionally set the `API_TOKEN` environment variable in your `docker-compose.yml` file to require a password to access the service.
 
-Requests without a valid `Authorization: <your_token>` header will be rejected.
+Requests without a valid `Authorization: <your_token>` header will be rejected if you have a token set.
 
 ## Config
 
