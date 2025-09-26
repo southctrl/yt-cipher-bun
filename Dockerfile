@@ -1,13 +1,23 @@
-FROM denoland/deno:latest
+FROM oven/bun:1.2.22-alpine
 
 WORKDIR /usr/src/app
 
+# Copy package files first for better caching
+COPY package.json bun.lockb* ./
+
+# Install dependencies
+RUN bun install --frozen-lockfile
+
+# Copy source code
 COPY . .
 
-RUN mkdir -p player_cache && chown -R deno:deno player_cache
+# Create cache directory and set permissions
+RUN mkdir -p player_cache && chown -R bun:bun player_cache
 
 EXPOSE 8001
 
-USER deno
+# Switch to bun user for security
+USER bun
 
-CMD ["run", "--allow-net", "--allow-read", "--allow-write", "--allow-env", "server.ts"]
+# Start the application
+CMD ["bun", "run", "server.ts"]
